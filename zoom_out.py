@@ -21,16 +21,11 @@ collection = db.FirstCollection
 #    def get_results(self):
 #        """Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
 #        records = db.FirstCollection.find({ "loc": { "$geoWithin": { "$box": [ [self.realx1, self.realy1],
-                                                                             [self.realx2, self.realy2] ] } } } )
+#                                                                             [self.realx2, self.realy2] ] } } } )
 #        return records
 
 #    @staticmethod
 #    def combine(Q):
-#        """The function 'combine' returns the intersection of the results from the user's sub-queries"""
-#        common_tr_ids = Q[0].get_results()
-#        for i in range(len(Q)):
-#            common_tr_ids = set(common_tr_ids).intersection(Q[i].get_results())
-#        return common_tr_ids
 
 class HRow:
     """Class HRow models one row from the matrix H."""
@@ -49,9 +44,8 @@ class HMat:
         self.Hmat = []
 
     def get_row_with_trace_id(self,tr_id):
-			"""For the given trajectory id tr_id returns the row that has this trajectory.
-				 if no row is found it returns None 
-			"""
+        """For the given trajectory id tr_id returns the row that has this trajectory. if no row is found it
+		returns None"""
         for r in range(len(self.Hmat)):
             row = self.Hmat[r]
             if row.tr_id == tr_id:
@@ -63,7 +57,7 @@ class HMat:
         and adds the sub-query that we examine. If not it adds the tr_id for the first time, with frequency=1 and adds
          the sub-query."""
         row = self.get_row_with_trace_id(tr_id)
-        if row not None:
+        if row is not None:
             row.freq +=1
             row.SQueries.append(Q_i)
         else:
@@ -83,23 +77,23 @@ class HMat:
         # we want to start with a row that has frequency lower than the threshold k
             if row.freq < k:
                 max_freq = row.freq
-                z = row.tr_id
-            for r in range(len(self.Hmat)):
-        # we want to compare the row we started with every row in HMat in order to find the row with the maximum
-        # frequency but also < k
-                new_row = self.Hmat[r]
-                if new_row.freq > max_freq and new_row.freq < k:
-                    max_freq = new_row.freq
-                    z = new_row.tr_id
-            return z
+                tr_id = row.tr_id
+                for r in range(len(self.Hmat)):
+                # we want to compare the row we started with every row in HMat in order to find the row with the maximum
+                # frequency but also < k
+                    new_row = self.Hmat[r]
+                    if new_row.freq > max_freq and new_row.freq < k:
+                        max_freq = new_row.freq
+                        tr_id = new_row.tr_id
+            return tr_id
 
 
     def compute_distortions(self):
-		pass
+        pass
 
     def add_new_episode(self):
         pass
-def zoom_out(k, Q, Rmin, Rmax):
+"""def zoom(k, Q, Rmin, Rmax):
     F_Q = Q
     Hmat = HMat
     ntr = Query.combine(F_Q)
@@ -109,6 +103,6 @@ def zoom_out(k, Q, Rmin, Rmax):
         for i in range(len(F_Q)):
             rslt = F_Q[i].get_results()
             if rslt is valid:
-                Hmat.fill(rslt["tr_id"], F_Q[i])
+                Hmat.fill(rslt["tr_id"], F_Q[i])"""
 
 
