@@ -1,0 +1,4 @@
+INVALID_ID = -1
+MIN_DIST = 2.0
+
+

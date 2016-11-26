@@ -6,8 +6,9 @@ collection = db.FirstCollection
 class Query:
 	""" This class represents a user sub-query """
 
-	def __init__(self, duration=0, realx1=None, realy1=None, realx2=None, realy2=None):
+	def __init__(self, qid,duration=0, realx1=None, realy1=None, realx2=None, realy2=None):
 		""" Constructor: Initialize the sub-query and has as members the columns that will be used """
+		self.qid = qid
 		self.QueryCount = -1
 		self.episodes = []
 		self.duration = duration
@@ -15,6 +16,10 @@ class Query:
 		self.realy1 = realy1
 		self.realx2 = realx2
 		self.realy2 = realy2
+
+	def distort_area(self,area_dist_unit):
+		pass
+
 
 	def get_results(self):
 
@@ -36,10 +41,9 @@ class Query:
 
 	@staticmethod
 	def combine(Q):
-		"""
-			The function 'combine' returns the intersection of the results from the user's sub-queries.
-			input: Q a list of subqueries of type Query
-		"""
+
+		"""The function 'combine' returns the intersection of the results from the user's sub-queries.
+			input: Q a list of subqueries of type Query"""
 
 		if Q == None:
 			raise ValueError("Argumet is None")
@@ -64,7 +68,3 @@ class Query:
 		for r in range(len(results)):
 			results = set(results).intersection(results[r])
 		return results
-		#common_tr_ids = Q[0].get_results()
-		#for i in range(len(Q)):
-		#	common_tr_ids = set(common_tr_ids).intersection(Q[i].get_results())
-		#return common_tr_ids
