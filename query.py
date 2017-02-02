@@ -1,12 +1,14 @@
+import distortion
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
 collection = db.FirstCollection
 
+
 class Query:
 	""" This class represents a user sub-query """
 
-	def __init__(self, qid,duration=0, realx1=None, realy1=None, realx2=None, realy2=None):
+	def __init__(self, qid, duration=0, realx1=None, realy1=None, realx2=None, realy2=None):
 		""" Constructor: Initialize the sub-query and has as members the columns that will be used """
 		self.qid = qid
 		self.QueryCount = -1
@@ -17,16 +19,18 @@ class Query:
 		self.realx2 = realx2
 		self.realy2 = realy2
 
-	def distort_area(self,area_dist_unit):
+	def distort_area(self, steps_):
+		self.realx1 = self.realx1 + steps_ * distortion.area_step
+		self.realy1 = self.realy1 + steps_ * distortion.area_step
+		self.realx2 = self.realx2 + steps_ * distortion.area_step
+		self.realy2 = self.realy2 + steps_ * distortion.area_step
 		pass
 
-
 	def get_results(self):
-
 		"""Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
 
 		#quick return if any of these is None then simply return None
-		if self.realx1 == None or self.realx2 == None or self.realy1 == None or self.realy2 == None:
+		if self.realx1 is None or self.realx2 is None or self.realy1 is None or self.realy2 is None:
 			return None
 
 		documents = db.FirstCollection.find({ "loc": { "$geoWithin": { "$box": [ [self.realx1, self.realy1],
@@ -43,21 +47,20 @@ class Query:
 	def combine(Q):
 
 		"""The function 'combine' returns the intersection of the results from the user's sub-queries.
-			input: Q a list of subqueries of type Query"""
+		input: Q a list of subqueries of type Query"""
 
-		if Q == None:
+		if Q is None:
 			raise ValueError("Argumet is None")
 
 		#first we collect all the results
 		total_results = []
 		for q in range(len(Q)):
 			query_result = Q[q].get_results()
-			if query_result != None and query_result != []:
+			if query_result is not None and query_result != []:
 				total_results.append(query_result)
 
 		#now we need to find the intersection in these
 		#lists
-
 		#make sure we don't have an empty list if there is
 		#only one result set don't bother finding the intersection
 		if total_results == [] or len(total_results) == 1:
