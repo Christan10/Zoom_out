@@ -1,29 +1,10 @@
+import query
+import distortion
 import constants
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
 collection = db.FirstCollection
-
-#transfered in query.py
-
-#class Query:
-#    """ This class represents a user sub-query """
-
-#    def __init__(self, duration=0, realx1=None, realy1=None, realx2=None, realy2=None):
-#        """ Constructor: Initialize the sub-query and has as members the columns that will be used """
-#        self.QueryCount = -1
-#        self.episodes = []
-#        self.duration = duration
-#        self.realx1 = realx1
-#        self.realy1 = realy1
-#        self.realx2 = realx2
-#        self.realy2 = realy2
-
-#    def get_results(self):
-#        """Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
-#        records = db.FirstCollection.find({ "loc": { "$geoWithin": { "$box": [ [self.realx1, self.realy1],
-#                                                                             [self.realx2, self.realy2] ] } } } )
-#        return records
 
 
 class HRow:
@@ -67,20 +48,51 @@ class HRow:
         distortion) from a row's SQ_dis_units, and returns it with the value."""
         min_dist = constants.MIN_DIST
         sbqid = constants.INVALID_ID
-        rslt = (sbqid, min_dist)
+
         for e in range(len(self.SQ_dis_units)):
             map = self.SQ_dis_units[e]
-            for key in map.keys():
-                if key == 'type' and map[key] == 'area_dist':
-                    dist_val = map['value']
+            if map['type'] == 'area_dist':
+                dist_val = map['value']
 
-                    if dist_val < min_dist:
-                        min_dist = dist_val
-                        sbqid = map['id']
-        rslt[0] = sbqid
-        rslt[1] = min_dist
-        return rslt
+                if dist_val < min_dist:
+                    min_dist = dist_val
+                    sbqid = map['id']
 
+        return (sbqid, min_dist)
+
+    def get_min_time_dist_unit(self):
+        """This function finds the sub-query id (sbqid) that has the minimum distortion unit value (only for time
+        distortion) from a row's SQ_dis_units, and returns it with the value."""
+        min_dist = constants.MIN_DIST
+        sbqid = constants.INVALID_ID
+
+        for e in range(len(self.SQ_dis_units)):
+            map = self.SQ_dis_units[e]
+            if map['type'] == 'time_dist':
+                dist_val = map['value']
+
+                if dist_val < min_dist:
+                    min_dist = dist_val
+                    sbqid = map['id']
+
+        return (sbqid, min_dist)
+
+    def get_min_area_time_dist_unit(self):
+        """This function finds the sub-query id (sbqid) that has the minimum distortion unit value (for area and time
+        distortion) from a row's SQ_dis_units, and returns it with the value."""
+        min_dist = constants.MIN_DIST
+        sbqid = constants.INVALID_ID
+
+        for e in range(len(self.SQ_dis_units)):
+            map = self.SQ_dis_units[e]
+            if map['type'] == 'area_time_dist':
+                dist_val = map['value']
+
+                if dist_val < min_dist:
+                    min_dist = dist_val
+                    sbqid = map['id']
+
+        return (sbqid, min_dist)
 
 
 class HMat:
@@ -91,7 +103,7 @@ class HMat:
 
     def get_row_with_trace_id(self, tr_id):
         """For the given trajectory id tr_id returns the row that has this trajectory. if no row is found it
-		returns None"""
+        returns None"""
         for r in range(len(self.Hmat)):
             row = self.Hmat[r]
             if row.tr_id == tr_id:
@@ -145,71 +157,63 @@ class HMat:
 
     def find_next_max_freq_rows(self, k, freq):
         """This function finds the tr_ids which: have the maximum frequency (=freq), but don't exceed the
-        threshold k."""
+        threshold k (k here is the sum of sub-queries the user set)."""
         trajectories = []
 
         for r in range(len(self.Hmat)):
             row = self.Hmat[r]
 
             if row.freq < k and row.freq == freq:
-                trajectories.append(row.tr_id)
+                trajectories.append(row)
         return trajectories
 
 
+def zoom(K, Q, Rmin, Rmax, distortion):
 
-def zoom(k, Q, Rmin, Rmax,distortion):
+    F_Q = Q
+    hmat = HMat()
+    ntr = len(query.Query.combine(F_Q))
 
-    return None
+    if ntr == K:
+        return Q
 
-    #F_Q = Q
-    #hmat = HMat()
-    #ntr = Query.combine(F_Q)
-    #sth_changed = False
-    #freq = INVALID_ID
-    #k = len(F_Q)
-    iterations_started = False
+    sth_changed = True
+    k = len(F_Q)
 
-    #while ntr != k and sth_changed is True:
-        #sth_changed = False
-        #for i in range(len(F_Q)):
-        #    rslt = F_Q[i].get_results()
-        #    if rslt is not None:
-        #        for r in rslt:
-        #            hmat.fill(rslt[r], F_Q[i])
+    while ntr != K and sth_changed is True:
+        sth_changed = False
+        for i in range(len(F_Q)):
+            rslt = F_Q[i].get_results()
+            if rslt is not None:
+                for r in rslt:
+                    hmat.fill(rslt[r], F_Q[i])
+
+        freq = hmat.get_init_max_freq(k)
+
+        next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
+        episode_found = False
+        #we set row_counter=ntr to include the rows already satisfing the criteria (k=len(F_Q))
+        row_counter = ntr
+
+        #safeguard we should not be here if this condition is True
+        if row_counter == hmat.rows():
+            raise Exception("row_counter should not be equal to H matrix number of rows")
+
+        hrows = hmat.rows()
+
+        while episode_found is False and row_counter != hrows:
+
+            row_counter += len(next_max_freq_rows)
+            episode_found = distortion.compute_rows_distortions(next_max_freq_rows)
+            if episode_found is True:
+                sth_changed = True
+                ntr = Query.combine(F_Q)
+            if episode_found is False:
+                freq = hmat.get_next_max_freq(k, freq)
+                next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
         #
-        # if iterations_started == False:
-        #    freq = hmat.get_init_max_freq(k)
-        #    iterations_started = True
         #
-        #next_max_freq_rows = hmat.find_next_max_freq(k,freq)
-        #episode_found = False
-        #row_counter = 0
-        #hrows = hmat.rows()
-        #
-        # while episode_found is False and row_counter != hrows:
-        #loop over the rows and compute distortions
-        #
-        #  row_counter += len(next_max_freq_rows)
-        #  episode_found = distortion.compute_rows_distortions(next_max_freq_rows)
-        #  if episode_found == True:
-        #   sth_changed = True
-        #   ntr = Query.combine(F_Q)
-        #  if episode_found == False:
-        #   freq = hmat.get_next_max_freq(k,freq)
-        #
-        #
-        #
-        #
-        #
-        #best_query_id = -1
-        #best_tr_id = -1
-        #episode_found = False
-        #hrows = hmat.rows()
-        #row_counter = 0
-        #while episode_found is False and row_counter != hrows:
-        #    D_Unit_St
-        #    hmat.compute_distortions(row_max_next_trace, D_Unit_St)
-   #return F_Q
+    return F_Q
 
 
 
