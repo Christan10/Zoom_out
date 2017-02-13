@@ -1,16 +1,17 @@
-import constants
+from zoom_out import *
 
 
 class DistortionData:
     """Class DistortionData computes the distortion units for the selected trajectories and finds the preferable
     episode if there is one to include."""
 
-    def __init__(self, area_step=0, time_step=0, distort_area_only=False, distort_time_only=False, distort_area_time=False):
+    def __init__(self, area_step=0, time_step=0, distort_area_only=False, distort_time_only=False,
+                 distort_area_time=False):
         self.area_step = area_step
         self.time_step = time_step
-        self.area_distortion_limit = 0.3
-        self.time_distortion_limit = 0.3
-        self.area_time_distortion_limit = 0.3
+        self.area_distortion_limit = 0.00000002
+        self.time_distortion_limit = 0.2
+        self.area_time_distortion_limit = 0.2
         self.subqueries = []
         self.distort_area_only = distort_area_only
         self.distort_time_only = distort_time_only
@@ -35,40 +36,6 @@ class DistortionData:
             raise Exception("Invalid subqueries list")
         self.subqueries = subqueries
 
-    def check_by_distort_time(self, row):
-
-        if self.subqueries == []:
-            raise Exception("Subqueries list is empty")
-
-        trace_id = row.get_trace_id()
-        subqueries_= self.find_subqueries_not_in_row(row)
-        discard_trc_id = False
-
-        for subq in range(len(subqueries_)):
-
-            if discard_trc_id is True:
-                break
-
-            time_distortion_unit = 0.0
-            query = subqueries_[subq]
-            #modify old_time correctly (using mongo probably)
-            old_time = query['duration']
-            new_time = old_time + self.time_step * old_time
-            time_distortion_unit = (new_time - old_time)/old_time
-
-            while time_distortion_unit < self.time_distortion_limit:
-                query_result = db.query('form the query chris')
-
-                if query_result is not None and query_result['trace_id'] == trace_id:
-                    row.set_subquery_dist_time_unit(subq, time_distortion_unit)
-                    break
-                old_time = new_time
-                new_time = old_time + self.time_step * old_time
-                time_distortion_unit = (new_time - old_time)/old_time
-
-                if time_distortion_unit > self.time_distortion_limit:
-                    discard_trc_id = True
-
     def check_by_distort_area_time(self, row):
 
         if self.subqueries == []:
@@ -83,25 +50,32 @@ class DistortionData:
             if discard_trc_id is True:
                 break
 
-            area_time_distortion_unit = 0.0
-            query = subqueries_[subq]
-            old_area = query['area']
-            new_area = old_area + self.area_step * old_area
-            old_time = query['duration']
-            new_time = old_time + self.time_step * old_time
-            area_time_distortion_unit = (((new_area - old_area)/old_area) + ((new_time - old_time)/old_time))/2
+            query_ = subqueries_[subq]
+            start_area = (query_.realx2 - query_.realx1) * (query_.realy2 - query_.realy1)
+            x1 = query_.realx1
+            x2 = query_.realx2
+            y1 = query_.realy1
+            y2 = query_.realy2
+            steps = 1
+            new_area = (x2 - x1 + 2 * steps * self.area_step) * (y2 - y1 + 2 * steps * self.area_step)
+            start_time = query_.duration
+            new_time = start_time + self.time_step * steps
+            area_time_distortion_unit = (((new_area - start_area)/start_area) + ((new_time - start_time)/start_time))/2
 
             while area_time_distortion_unit < self.area_time_distortion_limit:
-                query_result = db.query('form the query chris')
+                query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                    [x1-steps*self.area_step, y1-steps*self.area_step],
+                    [x2+steps*self.area_step, y2+steps*self.area_step]]}}, "duration": {"$lt": new_time},
+                    "episodes": query_.episodes, 'MOid': trace_id})
 
                 if query_result is not None and query_result['trace_id'] == trace_id:
-                    row.set_subquery_dist_area_time_unit(subq, area_time_distortion_unit)
+                    row.set_subquery_dist_area_time_unit(subq, area_time_distortion_unit, steps)
                     break
-                old_area = new_area
-                new_area = old_area + self.area_step * old_area
-                old_time = new_time
-                new_time = old_time + self.time_step * old_time
-                area_time_distortion_unit = (((new_area - old_area)/old_area) + ((new_time - old_time)/old_time))/2
+                steps += 1
+                new_area = (x2 - x1 + 2 * steps * self.area_step) * (y2 - y1 + 2 * steps * self.area_step)
+                new_time = start_time + self.time_step * steps
+                area_time_distortion_unit = (((new_area - start_area)/start_area) + ((new_time - start_time)/start_time)
+                                             )/2
 
                 if area_time_distortion_unit > self.area_time_distortion_limit:
                     discard_trc_id = True
@@ -114,10 +88,10 @@ class DistortionData:
         #loop over the subqueries of the row and for each subquery iteratively enlarge the area of the subquery
         #for each iteration check with the db by using the enlarged area if the trajectory is contained in the modified
         #subquery. The inner enlargment iterations finish when the overall area_distortion_unit  exceeds a certain
-        #area_distortion_limit. if the trajectory id is found before reaching the area_distortion_limit meaning
+        #area_distortion_limit. If the trajectory id is found before reaching the area_distortion_limit meaning
         #area_distortion_unit < area_distortion_limit the algorithm continues to examine the next subquery, otherwise
         #it marks the whole row as invalid. If the all subqueries are found after distorting the area to contain the
-        #trajectory then the smallest distortion is chosen.
+        #trajectory then the smallest distortion will be chosen.
 
         trace_id = row.get_trace_id()
         subqueries_ = self.find_subqueries_not_in_row(row)
@@ -128,33 +102,71 @@ class DistortionData:
             if discard_trc_id is True:
                 break
 
-            area_distortion_unit = 0.0
-            query = subqueries_[subq]
+            query_ = subqueries_[subq]
 
-            start_area = (query.realx2 - query.realx1)*(query.realy2 - query.realy1)
-            x1 = query.realx1
-            x2 = query.realx2
-            y1 = query.realy1
-            y2 = query.realy2
+            start_area = (query_.realx2 - query_.realx1)*(query_.realy2 - query_.realy1)
+            x1 = query_.realx1
+            x2 = query_.realx2
+            y1 = query_.realy1
+            y2 = query_.realy2
             steps = 1
             new_area = (x2 - x1 + 2*steps*self.area_step)*(y2 - y1 + 2*steps*self.area_step)
-
             area_distortion_unit = (new_area - start_area)/start_area
 
             while area_distortion_unit < self.area_distortion_limit:
                 #haven't reached the distortion limit yet so query the db by using the new_area
                 query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
                     [x1-steps*self.area_step, y1-steps*self.area_step], [x2+steps*self.area_step,
-                                                                         y2+steps*self.area_step]]}}, 'MOid': trace_id})
+                                                                         y2+steps*self.area_step]]}}, "duration":
+                    {"$lt": query_.duration}, "episodes": query_.episodes, 'MOid': trace_id})
 
                 if query_result is not None and query_result['MOid'] == trace_id:
-                    row.set_subquery_dist_area_unit(subq, area_distortion_unit)
+                    row.set_subquery_dist_area_unit(subq, area_distortion_unit, steps)
                     break
                 steps += 1
                 new_area = (x2 - x1 + 2*steps*self.area_step)*(y2 - y1 + 2*steps*self.area_step)
                 area_distortion_unit = (new_area - start_area) / start_area
 
                 if area_distortion_unit > self.area_distortion_limit:
+                    discard_trc_id = True
+
+    def check_by_distort_time(self, row):
+
+        if self.subqueries == []:
+            raise Exception("Subqueries list is empty")
+
+        trace_id = row.get_trace_id()
+        subqueries_ = self.find_subqueries_not_in_row(row)
+        discard_trc_id = False
+
+        for subq in range(len(subqueries_)):
+
+            if discard_trc_id is True:
+                break
+
+            query_ = subqueries_[subq]
+            x1 = query_.realx1
+            x2 = query_.realx2
+            y1 = query_.realy1
+            y2 = query_.realy2
+            start_time = query_.duration
+            steps = 1
+            new_time = start_time + self.time_step * steps
+            time_distortion_unit = (new_time - start_time)/start_time
+
+            while time_distortion_unit < self.time_distortion_limit:
+                query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}},
+                                                        "duration": {"$lt": new_time}, "episodes": query_.episodes,
+                                                        'MOid': trace_id})
+
+                if query_result is not None and query_result['MOid'] == trace_id:
+                    row.set_subquery_dist_time_unit(subq, time_distortion_unit, steps)
+                    break
+                steps += 1
+                new_time = start_time + self.time_step * steps
+                time_distortion_unit = (new_time - start_time)/start_time
+
+                if time_distortion_unit > self.time_distortion_limit:
                     discard_trc_id = True
 
     def check_by_distortion(self, row):
@@ -164,10 +176,8 @@ class DistortionData:
             min_dist_area_unit = row.get_min_area_dist_unit()
 
             if min_dist_area_unit[0] != constants.INVALID_ID:
-                #self.subqueries[min_dist_area_unit[0]].distort_area(steps)
-                return (row.get_trace_id(),min_dist_area_unit[0],min_dist_area_unit[1])
-               #return True
-            return (-1,-1,-1)
+                return [row.get_trace_id(), min_dist_area_unit[0], min_dist_area_unit[1], min_dist_area_unit[2]]
+            return [-1, -1, -1, -1]
 
         elif self.distort_time_only is True:
             self.check_by_distort_time(row)
@@ -192,14 +202,25 @@ class DistortionData:
                             "distort_area_time flag to True. ")
 
     def compute_rows_distortions(self, rows):
-        episode_found = False
         episode_found = []
+        minimum_dist_unit = constants.LARGE_VALUE
+        steps_ = constants.INVALID_ID
+        subquery = constants.INVALID_ID
         for r in range(len(rows)):
             episode_found.append(self.check_by_distortion(rows[r]))
         #loop over episode_found list if a True exists return True else False
-        return episode_found
+        for x in episode_found:
+            if x[2] != -1 and x[2] < minimum_dist_unit:
+                minimum_dist_unit = x[2]
+                steps_ = x[3]
+                subquery = x[1]
 
-
-
-
-
+        if minimum_dist_unit != constants.LARGE_VALUE:
+            if self.distort_area_only is True:
+                self.subqueries[subquery].distort_area(steps_)
+            elif self.distort_time_only is True:
+                self.subqueries[subquery].distort_time(steps_)
+            else:
+                self.subqueries[subquery].distort_area_time(steps_)
+            return True
+        return False
