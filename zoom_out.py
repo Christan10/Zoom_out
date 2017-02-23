@@ -84,7 +84,7 @@ class HRow:
         distortion) from a row's SQ_dis_units, and returns it with the value."""
         min_dist = constants.MIN_DIST
         sbqid = constants.INVALID_ID
-
+        step = constants.INVALID_ID
         for e in range(len(self.SQ_dis_units)):
             map = self.SQ_dis_units[e]
             if map['type'] == 'area_time_dist':
@@ -93,8 +93,9 @@ class HRow:
                 if dist_val < min_dist:
                     min_dist = dist_val
                     sbqid = map['id']
+                    step = map['steps']
 
-        return (sbqid, min_dist)
+        return (sbqid, min_dist, step)
 
 
 class HMat:
@@ -186,6 +187,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
         for i in range(len(F_Q)):
             f_q = F_Q[i]
             rslt = f_q.get_results()
+            print(rslt)
             if rslt is not None:
                 for r in rslt:
                     hmat.fill(r, f_q)
@@ -211,7 +213,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
             if episode_found is True:
                 sth_changed = True
                 ntr = len(query.Query.combine(F_Q))
-
+                print(ntr)
             if episode_found is False:
                 freq = hmat.get_next_max_freq(k, freq)
                 next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
