@@ -9,7 +9,7 @@ class DistortionData:
                  distort_area_time=False):
         self.area_step = area_step
         self.time_step = time_step
-        self.area_distortion_limit = 0.00000002
+        self.area_distortion_limit = 10000.0
         self.time_distortion_limit = 0.2
         self.area_time_distortion_limit = 0.2
         self.subqueries = []
@@ -63,13 +63,22 @@ class DistortionData:
             area_time_distortion_unit = (((new_area - start_area)/start_area) + ((new_time - start_time)/start_time))/2
 
             while area_time_distortion_unit < self.area_time_distortion_limit:
-                query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
                     [x1-steps*self.area_step, y1-steps*self.area_step],
                     [x2+steps*self.area_step, y2+steps*self.area_step]]}}, "duration": {"$lt": new_time},
                     "episodes": query_.episodes, 'MOid': trace_id})
-
-                if query_result is not None and query_result['trace_id'] == trace_id:
-                    row.set_subquery_dist_area_time_unit(subq, area_time_distortion_unit, steps)
+                query_rslt = []
+                for i in q_r:
+                    query_rslt.append(i['MOid'])
+                q_reslt = set(query_rslt)
+                query_result = list(q_reslt)
+                out = False
+                for i in query_result:
+                    if query_result is not None and i == trace_id:
+                        row.set_subquery_dist_area_time_unit(subq, area_time_distortion_unit, steps)
+                        out = True
+                        break
+                if out is True:
                     break
                 steps += 1
                 new_area = (x2 - x1 + 2 * steps * self.area_step) * (y2 - y1 + 2 * steps * self.area_step)
@@ -103,7 +112,6 @@ class DistortionData:
                 break
 
             query_ = subqueries_[subq]
-
             start_area = (query_.realx2 - query_.realx1)*(query_.realy2 - query_.realy1)
             x1 = query_.realx1
             x2 = query_.realx2
@@ -115,13 +123,22 @@ class DistortionData:
 
             while area_distortion_unit < self.area_distortion_limit:
                 #haven't reached the distortion limit yet so query the db by using the new_area
-                query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
                     [x1-steps*self.area_step, y1-steps*self.area_step], [x2+steps*self.area_step,
                                                                          y2+steps*self.area_step]]}}, "duration":
                     {"$lt": query_.duration}, "episodes": query_.episodes, 'MOid': trace_id})
-
-                if query_result is not None and query_result['MOid'] == trace_id:
-                    row.set_subquery_dist_area_unit(subq, area_distortion_unit, steps)
+                query_rslt = []
+                for i in q_r:
+                    query_rslt.append(i['MOid'])
+                q_reslt = set(query_rslt)
+                query_result = list(q_reslt)
+                out = False
+                for i in query_result:
+                    if query_result is not None and i == trace_id:
+                        row.set_subquery_dist_area_unit(subq, area_distortion_unit, steps)
+                        out = True
+                        break
+                if out is True:
                     break
                 steps += 1
                 new_area = (x2 - x1 + 2*steps*self.area_step)*(y2 - y1 + 2*steps*self.area_step)
@@ -155,12 +172,21 @@ class DistortionData:
             time_distortion_unit = (new_time - start_time)/start_time
 
             while time_distortion_unit < self.time_distortion_limit:
-                query_result = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}},
-                                                        "duration": {"$lt": new_time}, "episodes": query_.episodes,
-                                                        'MOid': trace_id})
-
-                if query_result is not None and query_result['MOid'] == trace_id:
-                    row.set_subquery_dist_time_unit(subq, time_distortion_unit, steps)
+                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}},
+                                               "duration": {"$lt": new_time}, "episodes": query_.episodes,
+                                               'MOid': trace_id})
+                query_rslt = []
+                for i in q_r:
+                    query_rslt.append(i['MOid'])
+                q_reslt = set(query_rslt)
+                query_result = list(q_reslt)
+                out = False
+                for i in query_result:
+                    if query_result is not None and i == trace_id:
+                        row.set_subquery_dist_time_unit(subq, time_distortion_unit, steps)
+                        out = True
+                        break
+                if out is True:
                     break
                 steps += 1
                 new_time = start_time + self.time_step * steps
@@ -184,18 +210,17 @@ class DistortionData:
             min_dist_time_unit = row.get_min_time_dist_unit()
 
             if min_dist_time_unit[0] != constants.INVALID_ID:
-                self.subqueries[min_dist_time_unit[0]].distort_time(min_dist_time_unit[1])
-                return True
-            return False
+                return [row.get_trace_id(), min_dist_time_unit[0], min_dist_time_unit[1], min_dist_time_unit[2]]
+            return [-1, -1, -1, -1]
 
         elif self.distort_area_time is True:
             self.check_by_distort_area_time(row)
             min_dist_area_time_unit = row.get_min_area_time_dist_unit()
 
             if min_dist_area_time_unit[0] != constants.INVALID_ID:
-                self.subqueries[min_dist_area_time_unit[0]].distort_area_time(min_dist_area_time_unit[1])
-                return True
-            return False
+                return [row.get_trace_id(), min_dist_area_time_unit[0], min_dist_area_time_unit[1],
+                        min_dist_area_time_unit[2]]
+            return [-1, -1, -1, -1]
 
         else:
             raise Exception("No valid distortion type. Set either distort_area_only or distort_time_only or "
