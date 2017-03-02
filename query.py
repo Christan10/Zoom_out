@@ -1,4 +1,3 @@
-import distortion
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
@@ -19,17 +18,21 @@ class Query:
         self.realx2 = realx2
         self.realy2 = realy2
 
-    def distort_area(self, steps_):
-        self.realx1 += steps_ * distortion.DistortionData.area_step
-        self.realy1 += steps_ * distortion.DistortionData.area_step
-        self.realx2 += steps_ * distortion.DistortionData.area_step
-        self.realy2 += steps_ * distortion.DistortionData.area_step
+    def distort_area(self, steps_, areastep):
+        self.realx1 -= steps_ * areastep
+        self.realy1 -= steps_ * areastep
+        self.realx2 += steps_ * areastep
+        self.realy2 += steps_ * areastep
 
-    def distort_time(self, steps_):
-        pass
+    def distort_time(self, steps_, timestep):
+        self.duration += steps_ * timestep
 
-    def distort_area_time(self, steps_):
-        pass
+    def distort_area_time(self, steps_, areastep, timestep):
+        self.realx1 -= steps_ * areastep
+        self.realy1 -= steps_ * areastep
+        self.realx2 += steps_ * areastep
+        self.realy2 += steps_ * areastep
+        self.duration += steps_ * timestep
 
     def get_results(self):
         """Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
