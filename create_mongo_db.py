@@ -21,7 +21,7 @@ def string_to_int(s):
 		return -1
 
 csvfile = open('C://Users//Chris//Desktop//Case2nd.csv', 'rt')
-#csvfile = open('Case1st.csv')
+
 reader = csv.reader(csvfile, delimiter= '\t')
 
 counter = 0

@@ -4,6 +4,7 @@ client = MongoClient()
 db = client.MyDB
 collection = db.FirstCollection
 
+
 class Query:
     """ This class represents a user sub-query """
 
@@ -19,10 +20,16 @@ class Query:
         self.realy2 = realy2
 
     def distort_area(self, steps_):
-        self.realx1 += steps_ * distortion.area_step
-        self.realy1 += steps_ * distortion.area_step
-        self.realx2 += steps_ * distortion.area_step
-        self.realy2 += steps_ * distortion.area_step
+        self.realx1 += steps_ * distortion.DistortionData.area_step
+        self.realy1 += steps_ * distortion.DistortionData.area_step
+        self.realx2 += steps_ * distortion.DistortionData.area_step
+        self.realy2 += steps_ * distortion.DistortionData.area_step
+
+    def distort_time(self, steps_):
+        pass
+
+    def distort_area_time(self, steps_):
+        pass
 
     def get_results(self):
         """Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
