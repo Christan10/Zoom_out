@@ -1,4 +1,9 @@
+import constants
 from zoom_out import *
+from pymongo import MongoClient
+client = MongoClient()
+db = client.MyDB
+collection = db.FirstCollection
 
 
 class DistortionData:
@@ -242,10 +247,10 @@ class DistortionData:
 
         if minimum_dist_unit != constants.LARGE_VALUE:
             if self.distort_area_only is True:
-                self.subqueries[subquery].distort_area(steps_)
+                self.subqueries[subquery].distort_area(steps_, self.area_step)
             elif self.distort_time_only is True:
-                self.subqueries[subquery].distort_time(steps_)
+                self.subqueries[subquery].distort_time(steps_, self.time_step)
             else:
-                self.subqueries[subquery].distort_area_time(steps_)
+                self.subqueries[subquery].distort_area_time(steps_, self.area_step, self.time_step)
             return True
         return False
