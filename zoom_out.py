@@ -1,4 +1,4 @@
-import query
+from query import Query
 from distortion import *
 import constants
 from pymongo import MongoClient
@@ -174,7 +174,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
     F_Q = Q
     hmat = HMat()
-    ntr = len(query.Query.combine(F_Q))
+    ntr = len(Query.combine(F_Q))
     print(ntr)
     if ntr >= K or ntr == 0:
         raise Exception("algorithm will not run")
@@ -212,7 +212,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
             if episode_found is True:
                 sth_changed = True
-                ntr = len(query.Query.combine(F_Q))
+                ntr = len(Query.combine(F_Q))
                 print(ntr)
             if episode_found is False:
                 freq = hmat.get_next_max_freq(k, freq)
