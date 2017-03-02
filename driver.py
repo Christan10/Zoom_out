@@ -2,6 +2,7 @@ from query import *
 from zoom_out import *
 from distortion import *
 
+
 K = 87
 Rmax = 1.0
 Rmin = 0.5
