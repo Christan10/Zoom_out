@@ -1,6 +1,7 @@
 from query import Query
 from distortion import *
 import constants
+import random
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
@@ -176,6 +177,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
     hmat = HMat()
     ntr = len(Query.combine(F_Q))
     print(ntr)
+    print(Query.combine(F_Q))
     if ntr >= K or ntr == 0:
         raise Exception("algorithm will not run")
 
@@ -207,18 +209,17 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
         while episode_found is False and row_counter != hrows:
 
+            random_number = random.uniform(Rmin, Rmax)
             row_counter += len(next_max_freq_rows)
-            episode_found = distortion.compute_rows_distortions(next_max_freq_rows)
+            episode_found = distortion.compute_rows_distortions(next_max_freq_rows, random_number)
 
             if episode_found is True:
                 sth_changed = True
                 ntr = len(Query.combine(F_Q))
                 print(ntr)
+                print(Query.combine(F_Q))
             if episode_found is False:
                 freq = hmat.get_next_max_freq(k, freq)
                 next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
 
     return F_Q
-
-
-
