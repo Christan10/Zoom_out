@@ -18,20 +18,21 @@ class Query:
         self.realx2 = realx2
         self.realy2 = realy2
 
-    def distort_area(self, steps_, areastep):
-        self.realx1 -= steps_ * areastep
-        self.realy1 -= steps_ * areastep
-        self.realx2 += steps_ * areastep
-        self.realy2 += steps_ * areastep
+    def distort_area(self, steps_, areastep, randnumber):
+        """This function changes the query bounding box properly in order to include a new trajectory"""
+        self.realx1 -= (steps_ * areastep) * randnumber
+        self.realy1 -= (steps_ * areastep) * randnumber
+        self.realx2 += (steps_ * areastep) * randnumber
+        self.realy2 += (steps_ * areastep) * randnumber
 
     def distort_time(self, steps_, timestep):
         self.duration += steps_ * timestep
 
-    def distort_area_time(self, steps_, areastep, timestep):
-        self.realx1 -= steps_ * areastep
-        self.realy1 -= steps_ * areastep
-        self.realx2 += steps_ * areastep
-        self.realy2 += steps_ * areastep
+    def distort_area_time(self, steps_, areastep, timestep, randnumber):
+        self.realx1 -= (steps_ * areastep) * randnumber
+        self.realy1 -= (steps_ * areastep) * randnumber
+        self.realx2 += (steps_ * areastep) * randnumber
+        self.realy2 += (steps_ * areastep) * randnumber
         self.duration += steps_ * timestep
 
     def get_results(self):
@@ -60,25 +61,24 @@ class Query:
         input: Q a list of subqueries of type Query"""
 
         if Q is None:
-            raise ValueError("Argumet is None")
+            raise ValueError("Argument is None")
 
         #first we collect all the results
         total_results = []
+        stopper = 0
         for q in range(len(Q)):
             query_result = Q[q].get_results()
             if query_result is not None and query_result != []:
                 total_results.append(query_result)
+            else:
+                stopper = 1
 
-        #now we need to find the intersection in these
-        #lists
-        #make sure we don't have an empty list if there is
-        #only one result set don't bother finding the intersection
-        if total_results == [] or len(total_results) == 1:
-            return total_results
+        if stopper == 1:
+            raise ValueError("one or more queries have no trajectory as a result")
 
         results = total_results[0]
 
         for r in range(len(total_results)):
-            results = set(results).intersection(total_results[r])
+            results = set(total_results[0]).intersection(total_results[r])
         result = list(results)
         return result
