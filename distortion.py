@@ -28,7 +28,7 @@ class DistortionData:
         found = []
 
         for subq in range(len(self.subqueries)):
-            if row.subquery_exists(self.subqueries[subq].qid) is True:
+            if row.subquery_exists(self.subqueries[subq].qid) is False:
                 continue
             else:
                 found.append(self.subqueries[subq])
@@ -80,7 +80,7 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_area_time_unit(subq, area_time_distortion_unit, steps)
+                        row.set_subquery_dist_area_time_unit(subqueries_[subq].qid, area_time_distortion_unit, steps)
                         out = True
                         break
                 if out is True:
@@ -95,9 +95,6 @@ class DistortionData:
                     discard_trc_id = True
 
     def check_by_distort_area(self, row):
-
-        if self.subqueries == []:
-            raise Exception("Subqueries list is empty")
 
         #loop over the subqueries of the row and for each subquery iteratively enlarge the area of the subquery
         #for each iteration check with the db by using the enlarged area if the trajectory is contained in the modified
@@ -140,7 +137,7 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_area_unit(subq, area_distortion_unit, steps)
+                        row.set_subquery_dist_area_unit(subqueries_[subq].qid, area_distortion_unit, steps)
                         out = True
                         break
                 if out is True:
@@ -188,7 +185,7 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_time_unit(subq, time_distortion_unit, steps)
+                        row.set_subquery_dist_time_unit(subqueries_[subq].qid, time_distortion_unit, steps)
                         out = True
                         break
                 if out is True:
@@ -231,7 +228,7 @@ class DistortionData:
             raise Exception("No valid distortion type. Set either distort_area_only or distort_time_only or "
                             "distort_area_time flag to True. ")
 
-    def compute_rows_distortions(self, rows):
+    def compute_rows_distortions(self, rows, ran_num):
         episode_found = []
         minimum_dist_unit = constants.LARGE_VALUE
         steps_ = constants.INVALID_ID
@@ -247,10 +244,16 @@ class DistortionData:
 
         if minimum_dist_unit != constants.LARGE_VALUE:
             if self.distort_area_only is True:
-                self.subqueries[subquery].distort_area(steps_, self.area_step)
+                for q in self.subqueries:
+                    if q.qid == subquery:
+                        q.distort_area(steps_, self.area_step, ran_num)
             elif self.distort_time_only is True:
-                self.subqueries[subquery].distort_time(steps_, self.time_step)
+                for q in self.subqueries:
+                    if q.qid == subquery:
+                        q.distort_time(steps_, self.time_step)
             else:
-                self.subqueries[subquery].distort_area_time(steps_, self.area_step, self.time_step)
+                for q in self.subqueries:
+                    if q.qid == subquery:
+                        q.distort_area_time(steps_, self.area_step, self.time_step, ran_num)
             return True
         return False
