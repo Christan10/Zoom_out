@@ -174,7 +174,6 @@ class HMat:
 def zoom(K, Q, Rmin, Rmax, distortion):
 
     F_Q = Q
-    hmat = HMat()
     ntr = len(Query.combine(F_Q))
     print(ntr)
     print(Query.combine(F_Q))
@@ -184,8 +183,9 @@ def zoom(K, Q, Rmin, Rmax, distortion):
     sth_changed = True
     k = len(F_Q)
 
-    while ntr != K and sth_changed is True:
+    while ntr < K and sth_changed is True:
         sth_changed = False
+        hmat = HMat()
         for i in range(len(F_Q)):
             f_q = F_Q[i]
             rslt = f_q.get_results()
