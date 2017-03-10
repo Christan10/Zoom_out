@@ -3,7 +3,7 @@ from zoom_out import *
 from distortion import *
 
 
-K = 50
+K = 87
 Rmax = 1.7
 Rmin = 1.0
 
