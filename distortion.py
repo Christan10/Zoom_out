@@ -28,7 +28,7 @@ class DistortionData:
         found = []
 
         for subq in range(len(self.subqueries)):
-            if row.subquery_exists(self.subqueries[subq].qid) is False:
+            if row.subquery_exists(self.subqueries[subq].qid) is True:
                 continue
             else:
                 found.append(self.subqueries[subq])
