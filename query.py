@@ -79,6 +79,6 @@ class Query:
         results = total_results[0]
 
         for r in range(len(total_results)):
-            results = set(total_results[0]).intersection(total_results[r])
+            results = set(results).intersection(total_results[r])
         result = list(results)
         return result
