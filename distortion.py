@@ -43,12 +43,10 @@ class DistortionData:
 
     def check_by_distort_area_time(self, row):
 
-        if self.subqueries == []:
-            raise Exception("Subqueries list is empty")
-
         trace_id = row.get_trace_id()
         subqueries_ = self.find_subqueries_not_in_row(row)
         discard_trc_id = False
+        to_add = []
 
         for subq in range(len(subqueries_)):
 
@@ -80,7 +78,8 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_area_time_unit(subqueries_[subq].qid, area_time_distortion_unit, steps)
+                        elements = [subqueries_[subq].qid, area_time_distortion_unit, steps]
+                        to_add.append(elements)
                         out = True
                         break
                 if out is True:
@@ -93,6 +92,10 @@ class DistortionData:
 
                 if area_time_distortion_unit > self.area_time_distortion_limit:
                     discard_trc_id = True
+
+        if discard_trc_id is not True:
+            for i in to_add:
+                row.set_subquery_dist_area_unit(i[0], i[1], i[2])
 
     def check_by_distort_area(self, row):
 
@@ -107,6 +110,7 @@ class DistortionData:
         trace_id = row.get_trace_id()
         subqueries_ = self.find_subqueries_not_in_row(row)
         discard_trc_id = False
+        to_add = []
 
         for subq in range(len(subqueries_)):
 
@@ -137,7 +141,8 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_area_unit(subqueries_[subq].qid, area_distortion_unit, steps)
+                        elements = [subqueries_[subq].qid, area_distortion_unit, steps]
+                        to_add.append(elements)
                         out = True
                         break
                 if out is True:
@@ -149,14 +154,16 @@ class DistortionData:
                 if area_distortion_unit > self.area_distortion_limit:
                     discard_trc_id = True
 
-    def check_by_distort_time(self, row):
+        if discard_trc_id is not True:
+            for i in to_add:
+                row.set_subquery_dist_area_unit(i[0], i[1], i[2])
 
-        if self.subqueries == []:
-            raise Exception("Subqueries list is empty")
+    def check_by_distort_time(self, row):
 
         trace_id = row.get_trace_id()
         subqueries_ = self.find_subqueries_not_in_row(row)
         discard_trc_id = False
+        to_add = []
 
         for subq in range(len(subqueries_)):
 
@@ -185,7 +192,8 @@ class DistortionData:
                 out = False
                 for i in query_result:
                     if query_result is not None and i == trace_id:
-                        row.set_subquery_dist_time_unit(subqueries_[subq].qid, time_distortion_unit, steps)
+                        elements = [subqueries_[subq].qid, time_distortion_unit, steps]
+                        to_add.append(elements)
                         out = True
                         break
                 if out is True:
@@ -196,6 +204,10 @@ class DistortionData:
 
                 if time_distortion_unit > self.time_distortion_limit:
                     discard_trc_id = True
+
+        if discard_trc_id is not True:
+            for i in to_add:
+                row.set_subquery_dist_area_unit(i[0], i[1], i[2])
 
     def check_by_distortion(self, row):
 
