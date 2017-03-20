@@ -10,7 +10,6 @@ class Query:
     def __init__(self, qid, duration=1, realx1=None, realy1=None, realx2=None, realy2=None, episodes = 'MOVE'):
         """ Constructor: Initialize the sub-query and has as members the columns that will be used """
         self.qid = qid
-        self.QueryCount = -1
         self.episodes = episodes
         self.duration = duration
         self.realx1 = realx1
