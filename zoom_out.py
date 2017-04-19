@@ -198,10 +198,10 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
         next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
         episode_found = False
-        #we set row_counter=ntr to include the rows already satisfing the criteria (k=len(F_Q))
+        # we set row_counter=ntr to include the rows already satisfing the criteria (k=len(F_Q))
         row_counter = ntr
 
-        #safeguard we should not be here if this condition is True
+        # safeguard we should not be here if this condition is True
         if row_counter == hmat.rows():
             raise Exception("row_counter should not be equal to H matrix number of rows")
 
