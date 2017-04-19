@@ -107,3 +107,4 @@ def check_for_overlap(k, new_query, user_id):
                         return True
     # If queries list is empty (it is the first time the user makes a query) or we do not have overlap, answer false.
     return False
+
