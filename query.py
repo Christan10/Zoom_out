@@ -6,8 +6,7 @@ collection = db.FirstCollection
 
 class Query:
     """ This class represents a user sub-query """
-
-    def __init__(self, qid, duration=1, realx1=None, realy1=None, realx2=None, realy2=None, episodes = 'MOVE'):
+    def __init__(self, qid, duration=1, realx1=None, realy1=None, realx2=None, realy2=None, episodes='None'):
         """ Constructor: Initialize the sub-query and has as members the columns that will be used """
         self.qid = qid
         self.episodes = episodes
@@ -37,13 +36,18 @@ class Query:
     def get_results(self):
         """Returns the trajectories, as tr_ids, that included in the parameters, the user set at the sub-query"""
 
-        #quick return if any of these is None then simply return None
+        # quick return if any of these is None then simply return None
         if self.realx1 is None or self.realx2 is None or self.realy1 is None or self.realy2 is None:
             return None
 
-        documents = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[self.realx1, self.realy1],
-                                                                             [self.realx2, self.realy2]]}},
-                                             "duration": {"$lt": self.duration}, "episodes": self.episodes})
+        if self.episodes == 'None':
+            documents = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[self.realx1, self.realy1],
+                                                                                 [self.realx2, self.realy2]]}},
+                                                 "duration": {"$lt": self.duration}})
+        else:
+            documents = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[self.realx1, self.realy1],
+                                                                                 [self.realx2, self.realy2]]}},
+                                                 "duration": {"$lt": self.duration}, "episodes": self.episodes})
 
         trajc_ids = []
 
@@ -62,7 +66,7 @@ class Query:
         if Q is None:
             raise ValueError("Argument is None")
 
-        #first we collect all the results
+        # first we collect all the results
         total_results = []
         stopper = 0
         for q in range(len(Q)):
