@@ -1,4 +1,3 @@
-import constants
 from zoom_out import *
 from pymongo import MongoClient
 client = MongoClient()
@@ -66,10 +65,17 @@ class DistortionData:
             area_time_distortion_unit = (((new_area - start_area)/start_area) + ((new_time - start_time)/start_time))/2
 
             while area_time_distortion_unit < self.area_time_distortion_limit:
-                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
-                    [x1-steps*self.area_step, y1-steps*self.area_step],
-                    [x2+steps*self.area_step, y2+steps*self.area_step]]}}, "duration": {"$lt": new_time},
-                    "episodes": query_.episodes, 'MOid': trace_id})
+                if query_.episodes == 'Null':
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                        [x1 - steps * self.area_step, y1 - steps * self.area_step],
+                        [x2 + steps * self.area_step, y2 + steps * self.area_step]]}}, "duration": {"$lt": new_time},
+                        'MOid': trace_id})
+                else:
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                        [x1-steps*self.area_step, y1-steps*self.area_step], [x2+steps*self.area_step,
+                                                                             y2+steps*self.area_step]]}}, "duration": {
+                        "$lt": new_time}, "episodes": query_.episodes, 'MOid': trace_id})
+
                 query_rslt = []
                 for i in q_r:
                     query_rslt.append(i['MOid'])
@@ -99,13 +105,13 @@ class DistortionData:
 
     def check_by_distort_area(self, row):
 
-        #loop over the subqueries of the row and for each subquery iteratively enlarge the area of the subquery
-        #for each iteration check with the db by using the enlarged area if the trajectory is contained in the modified
-        #subquery. The inner enlargment iterations finish when the overall area_distortion_unit  exceeds a certain
-        #area_distortion_limit. If the trajectory id is found before reaching the area_distortion_limit meaning
-        #area_distortion_unit < area_distortion_limit the algorithm continues to examine the next subquery, otherwise
-        #it marks the whole row as invalid. If the all subqueries are found after distorting the area to contain the
-        #trajectory then the smallest distortion will be chosen.
+        # loop over the subqueries of the row and for each subquery iteratively enlarge the area of the subquery
+        # for each iteration check with the db by using the enlarged area if the trajectory is contained in the modified
+        # subquery. The inner enlargment iterations finish when the overall area_distortion_unit  exceeds a certain
+        # area_distortion_limit. If the trajectory id is found before reaching the area_distortion_limit meaning
+        # area_distortion_unit < area_distortion_limit the algorithm continues to examine the next subquery, otherwise
+        # it marks the whole row as invalid. If the all subqueries are found after distorting the area to contain the
+        # trajectory then the smallest distortion will be chosen.
 
         trace_id = row.get_trace_id()
         subqueries_ = self.find_subqueries_not_in_row(row)
@@ -128,11 +134,19 @@ class DistortionData:
             area_distortion_unit = (new_area - start_area)/start_area
 
             while area_distortion_unit < self.area_distortion_limit:
-                #haven't reached the distortion limit yet so query the db by using the new_area
-                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
-                    [x1-steps*self.area_step, y1-steps*self.area_step], [x2+steps*self.area_step,
-                                                                         y2+steps*self.area_step]]}}, "duration":
-                    {"$lt": query_.duration}, "episodes": query_.episodes, 'MOid': trace_id})
+                # haven't reached the distortion limit yet so query the db by using the new_area
+                if query_.episodes == 'Null':
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                        [x1 - steps * self.area_step, y1 - steps * self.area_step], [x2 + steps * self.area_step,
+                                                                                     y2 + steps * self.area_step]]}},
+                        "duration":
+                            {"$lt": query_.duration}, 'MOid': trace_id})
+                else:
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [
+                        [x1-steps*self.area_step, y1-steps*self.area_step], [x2+steps*self.area_step,
+                                                                             y2+steps*self.area_step]]}}, "duration":
+                        {"$lt": query_.duration}, "episodes": query_.episodes, 'MOid': trace_id})
+
                 query_rslt = []
                 for i in q_r:
                     query_rslt.append(i['MOid'])
@@ -181,9 +195,13 @@ class DistortionData:
             time_distortion_unit = (new_time - start_time)/start_time
 
             while time_distortion_unit < self.time_distortion_limit:
-                q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}},
-                                               "duration": {"$lt": new_time}, "episodes": query_.episodes,
-                                               'MOid': trace_id})
+                if query_.episodes == 'Null':
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}},
+                                                   "duration": {"$lt": new_time}, 'MOid': trace_id})
+                else:
+                    q_r = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[x1, y1], [x2, y2]]}}, "duration": {
+                        "$lt": new_time}, "episodes": query_.episodes, 'MOid': trace_id})
+
                 query_rslt = []
                 for i in q_r:
                     query_rslt.append(i['MOid'])
@@ -247,7 +265,7 @@ class DistortionData:
         subquery = constants.INVALID_ID
         for r in range(len(rows)):
             episode_found.append(self.check_by_distortion(rows[r]))
-        #loop over episode_found list if a True exists return True else False
+        # loop over episode_found list if a True exists return True else False
         for x in episode_found:
             if x[2] != -1 and x[2] < minimum_dist_unit:
                 minimum_dist_unit = x[2]
