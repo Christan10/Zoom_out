@@ -4,7 +4,7 @@ db = client.MyDB
 collection = db.FirstCollection
 
 
-class Query:
+class SQuery:
     """ This class represents a user sub-query """
     def __init__(self, qid, duration=1, realx1=None, realy1=None, realx2=None, realy2=None, episodes='None'):
         """ Constructor: Initialize the sub-query and has as members the columns that will be used """
@@ -85,3 +85,7 @@ class Query:
             results = set(results).intersection(total_results[r])
         result = list(results)
         return result
+
+    def conversion(self):
+        sqr = [self.qid, self.duration, self.realx1, self.realy1, self.realx2, self.realy2, self.episodes]
+        return sqr
