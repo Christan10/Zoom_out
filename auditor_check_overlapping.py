@@ -1,8 +1,8 @@
-from query import Query
+from query import SQuery
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
-collection2 = db.QueriesCollection
+collection = db.QueriesCollection
 
 
 def check_tag_overlap(q1, q2):
@@ -77,34 +77,37 @@ def check_overlap_by_subqueries_number(q1, q2):
     return False
 
 
-def check_for_overlap(k, new_query, user_id):
-    # First we search to find the queries this user had previously done.
-    start_queries = db.QueriesCollection.find({"urid": user_id})
-    queries = []
+def check_for_overlap(k, new_query, user_id, finalnewquery):
+    # First we search to find the queries this user had previously done.They have one subquery.
+    start_queries = db.QueriesCollection.find({"urid": user_id, "query": {"$size": 1}}, {"_id": 0, "query": 1})
     list_queries_to_exam = []
     for query in start_queries:
-        queries.append(query)
+        list_queries_to_exam.append(query["query"])
     # This is the part of code if this user is not the first time he makes a query.The queries list is not empty.
-    if len(queries) != 0:
-        for q in queries:
-            if len(q[1]) == 1:
-                list_queries_to_exam.append(q)
+    if len(list_queries_to_exam) != 0:
 
         if len(new_query) == 1:
             for i in list_queries_to_exam:
                 if check_spatial_overlap(new_query, i) is True:
+                    print("spatial overlapping")
                     return True
                 elif check_time_overlap(new_query, i) is True:
+                    print("time overlapping")
                     return True
                 elif check_tag_overlap(new_query, i) is True:
+                    print("tag overlapping")
                     return True
         else:
             for i in list_queries_to_exam:
                 if check_overlap_by_subqueries_number(new_query, i) is True:
-                    count1 = len(Query.combine(new_query))
-                    count2 = len(Query.combine(i))
+                    pastquery = []
+                    for y in i:
+                        subquery = SQuery(y[0], y[1], y[2], y[3], y[4], y[5], y[6])
+                        pastquery.append(subquery)
+                    count1 = len(SQuery.combine(finalnewquery))
+                    count2 = len(SQuery.combine(pastquery))
                     if abs(count1 - count2) < k:
+                        print("overlapping by subqueries number")
                         return True
     # If queries list is empty (it is the first time the user makes a query) or we do not have overlap, answer false.
     return False
-
