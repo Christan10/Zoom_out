@@ -1,4 +1,4 @@
-from query import Query
+from query import SQuery
 from distortion import *
 import constants
 import random
@@ -174,9 +174,9 @@ class HMat:
 def zoom(K, Q, Rmin, Rmax, distortion):
 
     F_Q = Q
-    ntr = len(Query.combine(F_Q))
+    ntr = len(SQuery.combine(F_Q))
     print(ntr)
-    print(Query.combine(F_Q))
+    print(SQuery.combine(F_Q))
     if ntr >= K or ntr == 0:
         raise Exception("algorithm will not run")
 
@@ -215,9 +215,9 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
             if episode_found is True:
                 sth_changed = True
-                ntr = len(Query.combine(F_Q))
+                ntr = len(SQuery.combine(F_Q))
                 print(ntr)
-                print(Query.combine(F_Q))
+                print(SQuery.combine(F_Q))
             if episode_found is False:
                 freq = hmat.get_next_max_freq(k, freq)
                 next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
