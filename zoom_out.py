@@ -175,7 +175,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
     F_Q = Q
     ntr = len(SQuery.combine(F_Q))
-    print(ntr)
+    # We print the ids of these common trajectories.
     print(SQuery.combine(F_Q))
     if ntr >= K or ntr == 0:
         raise Exception("algorithm will not run")
@@ -189,6 +189,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
         for i in range(len(F_Q)):
             f_q = F_Q[i]
             rslt = f_q.get_results()
+            # We print the ids of the trajectories for each subquery.
             print(rslt)
             if rslt is not None:
                 for r in rslt:
@@ -198,7 +199,7 @@ def zoom(K, Q, Rmin, Rmax, distortion):
 
         next_max_freq_rows = hmat.find_next_max_freq_rows(k, freq)
         episode_found = False
-        # we set row_counter=ntr to include the rows already satisfing the criteria (k=len(F_Q))
+        # We set row_counter=ntr to include the rows already satisfing the criteria (k=len(F_Q))
         row_counter = ntr
 
         # safeguard we should not be here if this condition is True
