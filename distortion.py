@@ -1,4 +1,5 @@
 from zoom_out import *
+import constants
 from pymongo import MongoClient
 client = MongoClient()
 db = client.MyDB
@@ -14,8 +15,8 @@ class DistortionData:
         self.area_step = area_step
         self.time_step = time_step
         self.area_distortion_limit = 10000.0
-        self.time_distortion_limit = 0.2
-        self.area_time_distortion_limit = 0.2
+        self.time_distortion_limit = 1
+        self.area_time_distortion_limit = 100.0
         self.subqueries = []
         self.distort_area_only = distort_area_only
         self.distort_time_only = distort_time_only
@@ -101,13 +102,13 @@ class DistortionData:
 
         if discard_trc_id is not True:
             for i in to_add:
-                row.set_subquery_dist_area_unit(i[0], i[1], i[2])
+                row.set_subquery_dist_area_time_unit(i[0], i[1], i[2])
 
     def check_by_distort_area(self, row):
 
         # loop over the subqueries of the row and for each subquery iteratively enlarge the area of the subquery
         # for each iteration check with the db by using the enlarged area if the trajectory is contained in the modified
-        # subquery. The inner enlargment iterations finish when the overall area_distortion_unit  exceeds a certain
+        # subquery. The inner enlargement iterations finish when the overall area_distortion_unit  exceeds a certain
         # area_distortion_limit. If the trajectory id is found before reaching the area_distortion_limit meaning
         # area_distortion_unit < area_distortion_limit the algorithm continues to examine the next subquery, otherwise
         # it marks the whole row as invalid. If the all subqueries are found after distorting the area to contain the
@@ -225,7 +226,7 @@ class DistortionData:
 
         if discard_trc_id is not True:
             for i in to_add:
-                row.set_subquery_dist_area_unit(i[0], i[1], i[2])
+                row.set_subquery_dist_time_unit(i[0], i[1], i[2])
 
     def check_by_distortion(self, row):
 
