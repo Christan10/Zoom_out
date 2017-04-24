@@ -40,7 +40,7 @@ class SQuery:
         if self.realx1 is None or self.realx2 is None or self.realy1 is None or self.realy2 is None:
             return None
 
-        if self.episodes == 'None':
+        if self.episodes == 'Null':
             documents = db.FirstCollection.find({"loc": {"$geoWithin": {"$box": [[self.realx1, self.realy1],
                                                                                  [self.realx2, self.realy2]]}},
                                                  "duration": {"$lt": self.duration}})
